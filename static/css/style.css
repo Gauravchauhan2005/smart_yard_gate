@@ -1,0 +1,14 @@
+/* ========================================================
+   Smart Yard Gate Automation System - Stylesheet
+   (Full responsive CSS & layout scheduled for Phase 2)
+   ======================================================== */
+
+:root {
+    --primary-color: #1e3a8a;
+    --secondary-color: #0284c7;
+    --accent-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --dark-bg: #0f172a;
+    --light-bg: #f8fafc;
+}
