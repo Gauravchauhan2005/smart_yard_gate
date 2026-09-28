@@ -1,10 +1,264 @@
 {% extends "base.html" %}
 
 {% block title %}Analytics - Smart Yard Gate{% endblock %}
+{% block page_title %}Operational Intelligence & AI Analytics{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>YMS Analytics & Confidence Metrics</h1>
-    <p>Phase 2 Analytics view scheduled for implementation.</p>
+<!-- Top KPI Summary Row -->
+<div class="row g-3 mb-4">
+    <!-- Total Vehicles -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Total Vehicles Logged</div>
+                <div class="kpi-value">{{ analytics_data.total_vehicles }}</div>
+                <div class="kpi-subtext text-muted">All-time terminal volume</div>
+            </div>
+            <div class="kpi-icon-wrapper icon-blue">
+                <i class="bi bi-truck"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Automated Entries -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Automated Entries</div>
+                <div class="kpi-value text-success">{{ analytics_data.automated_entries }}</div>
+                <div class="kpi-subtext text-success">
+                    <i class="bi bi-shield-check"></i> {{ "%.1f"|format((analytics_data.automated_entries / analytics_data.total_vehicles) * 100) }}% Autonomous
+                </div>
+            </div>
+            <div class="kpi-icon-wrapper icon-emerald">
+                <i class="bi bi-robot"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Reviews -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Manual Reviews</div>
+                <div class="kpi-value text-danger">{{ analytics_data.manual_reviews }}</div>
+                <div class="kpi-subtext text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Flagged for inspection
+                </div>
+            </div>
+            <div class="kpi-icon-wrapper icon-amber">
+                <i class="bi bi-person-exclamation"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Detection Confidence -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Avg Detection Conf</div>
+                <div class="kpi-value text-primary">{{ "%.1f"|format(analytics_data.avg_detection_confidence * 100) }}%</div>
+                <div class="kpi-subtext text-muted">YOLOv8 bounding box mAP</div>
+            </div>
+            <div class="kpi-icon-wrapper icon-indigo">
+                <i class="bi bi-crosshair"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average OCR Confidence -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Avg OCR Conf</div>
+                <div class="kpi-value text-purple">{{ "%.1f"|format(analytics_data.avg_ocr_confidence * 100) }}%</div>
+                <div class="kpi-subtext text-muted">PaddleOCR exact character match</div>
+            </div>
+            <div class="kpi-icon-wrapper icon-purple">
+                <i class="bi bi-fonts"></i>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Charts Row 1: Hourly Throughput & Check-in vs Check-Out -->
+<div class="row g-4 mb-4">
+    <!-- Hourly Throughput -->
+    <div class="col-12 col-lg-8">
+        <div class="card-yms h-100">
+            <div class="card-yms-header">
+                <h2 class="card-yms-title fs-6">
+                    <i class="bi bi-bar-chart-line text-primary"></i>
+                    Vehicles by Hour (24-Hour Gate Throughput)
+                </h2>
+                <span class="badge bg-light text-dark border">Real-Time Ingress</span>
+            </div>
+            <div class="card-yms-body">
+                <div style="height: 300px;">
+                    <canvas id="hourlyThroughputChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Check-In vs Check-Out Flow -->
+    <div class="col-12 col-lg-4">
+        <div class="card-yms h-100">
+            <div class="card-yms-header">
+                <h2 class="card-yms-title fs-6">
+                    <i class="bi bi-pie-chart text-info"></i>
+                    Check-In vs Check-Out Ratio
+                </h2>
+            </div>
+            <div class="card-yms-body d-flex flex-column align-items-center justify-content-center">
+                <div style="height: 240px; width: 100%;">
+                    <canvas id="flowRatioChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2: Traffic Per Gate & Detection Object Results -->
+<div class="row g-4 mb-4">
+    <!-- Vehicles Per Gate -->
+    <div class="col-12 col-lg-6">
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h2 class="card-yms-title fs-6">
+                    <i class="bi bi-segmented-nav text-indigo"></i>
+                    Traffic Distribution per Gate
+                </h2>
+            </div>
+            <div class="card-yms-body">
+                <div style="height: 260px;">
+                    <canvas id="gateDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detection Classification Breakdown -->
+    <div class="col-12 col-lg-6">
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h2 class="card-yms-title fs-6">
+                    <i class="bi bi-tags-fill text-warning"></i>
+                    Computer Vision Detection Results
+                </h2>
+            </div>
+            <div class="card-yms-body">
+                <div style="height: 260px;">
+                    <canvas id="detectionBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Hourly Throughput Chart
+        const hourlyCtx = document.getElementById('hourlyThroughputChart').getContext('2d');
+        new Chart(hourlyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
+                datasets: [
+                    {
+                        label: 'Check-In Ingress',
+                        data: [4, 2, 7, 18, 29, 24, 22, 31, 27, 19, 11, 6],
+                        backgroundColor: '#1d4ed8',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Check-Out Egress',
+                        data: [2, 1, 3, 9, 17, 21, 26, 28, 22, 15, 8, 4],
+                        backgroundColor: '#06b6d4',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Flow Ratio Doughnut
+        const flowCtx = document.getElementById('flowRatioChart').getContext('2d');
+        new Chart(flowCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Inside Yard', 'Checked Out', 'Processing', 'Manual Review'],
+                datasets: [{
+                    data: [42, 103, 3, 4],
+                    backgroundColor: ['#10b981', '#64748b', '#3b82f6', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Gate Distribution Bar Chart
+        const gateCtx = document.getElementById('gateDistributionChart').getContext('2d');
+        new Chart(gateCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Gate 1 (North Inbound)', 'Gate 2 (South Inbound)', 'Gate 3 (East Egress)', 'Gate 4 (West Rail)'],
+                datasets: [{
+                    label: 'Processed Vehicles',
+                    data: [68, 45, 52, 28],
+                    backgroundColor: ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Detection Breakdown Chart
+        const detectCtx = document.getElementById('detectionBreakdownChart').getContext('2d');
+        new Chart(detectCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Class 8 Semi-Trucks', 'Dry-Van Trailers', 'Reefer Trailers', 'Flatbeds', 'Chassis/Containers'],
+                datasets: [{
+                    data: [84, 52, 31, 16, 10],
+                    backgroundColor: ['#1d4ed8', '#059669', '#d97706', '#7c3aed', '#0284c7'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

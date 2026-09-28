@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Yard Inventory - Smart Yard Gate{% endblock %}
+{% block page_title %}Yard Inventory & Slot Allocation{% endblock %}
+
+{% block content %}
+<!-- Yard Overview Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Total Yard Capacity</div>
+                <div class="kpi-value">80</div>
+                <div class="kpi-subtext text-muted">Allocated Bays</div>
+            </div>
+            <div class="kpi-icon-wrapper icon-blue">
+                <i class="bi bi-grid-3x3-gap"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Occupied Slots</div>
+                <div class="kpi-value text-success">42</div>
+                <div class="kpi-subtext text-success">52.5% Occupancy</div>
+            </div>
+            <div class="kpi-icon-wrapper icon-emerald">
+                <i class="bi bi-truck-front-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Available Slots</div>
+                <div class="kpi-value text-primary">38</div>
+                <div class="kpi-subtext text-primary">Ready for Inbound</div>
+            </div>
+            <div class="kpi-icon-wrapper icon-indigo">
+                <i class="bi bi-check2-square"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Dwell Over 24h</div>
+                <div class="kpi-value text-warning">3</div>
+                <div class="kpi-subtext text-warning">Attention Needed</div>
+            </div>
+            <div class="kpi-icon-wrapper icon-amber">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card-yms mb-4">
+    <div class="card-yms-body">
+        <div class="row g-3" id="yardFilterRow">
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-bold text-secondary">SEARCH IDENTIFIER</label>
+                <input type="text" class="form-control" id="yardSearchInput" placeholder="Plate, trailer, or bay...">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary">FILTER BY GATE</label>
+                <select class="form-select" id="yardGateFilter">
+                    <option value="">All Gates</option>
+                    <option value="1">Gate 1</option>
+                    <option value="2">Gate 2</option>
+                    <option value="3">Gate 3</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary">FILTER BY STATUS</label>
+                <select class="form-select" id="yardStatusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="Inside Yard">Inside Yard</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Manual Review">Manual Review</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary">VEHICLE TYPE</label>
+                <select class="form-select" id="yardTypeFilter">
+                    <option value="">All Types</option>
+                    <option value="Semi-Truck">Semi-Truck</option>
+                    <option value="Box Truck">Box Truck</option>
+                    <option value="Flatbed">Flatbed</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" id="yardResetBtn">
+                    Reset Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yard Inventory Table -->
+<div class="card-yms">
+    <div class="card-yms-header">
+        <h2 class="card-yms-title">
+            <i class="bi bi-diagram-2 text-primary"></i>
+            Current Yard Occupancy & Assigned Locations
+        </h2>
+        <span class="badge bg-secondary">Live Refresh Active</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table-yms" id="yardInventoryTable">
+            <thead>
+                <tr>
+                    <th>Vehicle ID</th>
+                    <th>License Plate</th>
+                    <th>Trailer Number</th>
+                    <th>Current Location</th>
+                    <th>Gate Ingress</th>
+                    <th>Entry Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in yard_items %}
+                <tr data-plate="{{ item.license_plate }}" data-trailer="{{ item.trailer_number }}" data-location="{{ item.location_code }}" data-gate="{{ item.gate_number }}" data-status="{{ item.status }}" data-type="{{ item.vehicle_type }}">
+                    <td>
+                        <span class="fw-bold text-secondary">#{{ item.vehicle_id }}</span>
+                        <small class="d-block text-muted">{{ item.vehicle_type }}</small>
+                    </td>
+                    <td>
+                        <span class="license-plate-badge">{{ item.license_plate }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-dark font-monospace">{{ item.trailer_number }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary text-white fs-6 font-monospace px-3 py-2">
+                            <i class="bi bi-geo-alt me-1"></i> {{ item.location_code }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="fw-semibold">Gate #{{ item.gate_number }}</span>
+                    </td>
+                    <td>
+                        <small class="text-dark">{{ item.entry_time }}</small>
+                    </td>
+                    <td>
+                        {% if item.status == 'Inside Yard' %}
+                            <span class="badge-status badge-inside-yard"><i class="bi bi-check-circle-fill"></i> Inside Yard</span>
+                        {% elif item.status == 'Processing' %}
+                            <span class="badge-status badge-processing"><i class="bi bi-arrow-repeat spin"></i> Processing</span>
+                        {% else %}
+                            <span class="badge-status badge-manual-review"><i class="bi bi-exclamation-triangle-fill"></i> Manual Review</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('main.vehicle_detail', vehicle_id=item.vehicle_id) }}" class="btn btn-outline-primary" title="Audit">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button type="button" class="btn btn-outline-warning" title="Reassign Slot" onclick="alert('Reassign location dialog for vehicle #{{ item.vehicle_id }}')">
+                                <i class="bi bi-arrow-left-right"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const searchInput = document.getElementById("yardSearchInput");
+        const gateSelect = document.getElementById("yardGateFilter");
+        const statusSelect = document.getElementById("yardStatusFilter");
+        const typeSelect = document.getElementById("yardTypeFilter");
+        const resetBtn = document.getElementById("yardResetBtn");
+        const rows = document.querySelectorAll("#yardInventoryTable tbody tr");
+
+        function filterYard() {
+            const query = searchInput.value.toLowerCase().trim();
+            const gate = gateSelect.value;
+            const status = statusSelect.value;
+            const type = typeSelect.value;
+
+            rows.forEach(row => {
+                const plate = (row.dataset.plate || "").toLowerCase();
+                const trailer = (row.dataset.trailer || "").toLowerCase();
+                const loc = (row.dataset.location || "").toLowerCase();
+                const rowGate = row.dataset.gate || "";
+                const rowStatus = row.dataset.status || "";
+                const rowType = row.dataset.type || "";
+
+                const matchesQuery = !query || plate.includes(query) || trailer.includes(query) || loc.includes(query);
+                const matchesGate = !gate || rowGate === gate;
+                const matchesStatus = !status || rowStatus === status;
+                const matchesType = !type || rowType === type;
+
+                row.style.display = (matchesQuery && matchesGate && matchesStatus && matchesType) ? "" : "none";
+            });
+        }
+
+        searchInput.addEventListener("input", filterYard);
+        gateSelect.addEventListener("change", filterYard);
+        statusSelect.addEventListener("change", filterYard);
+        typeSelect.addEventListener("change", filterYard);
+
+        resetBtn.addEventListener("click", () => {
+            searchInput.value = "";
+            gateSelect.value = "";
+            statusSelect.value = "";
+            typeSelect.value = "";
+            filterYard();
+        });
+    });
+</script>
+{% endblock %}

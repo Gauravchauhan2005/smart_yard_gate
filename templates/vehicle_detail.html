@@ -1,10 +1,188 @@
 {% extends "base.html" %}
 
-{% block title %}Vehicle Detail - Smart Yard Gate{% endblock %}
+{% block title %}Vehicle #{{ vehicle.id }} - Smart Yard Gate{% endblock %}
+{% block page_title %}Vehicle Inspection & Audit Record #{{ vehicle.id }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Vehicle Details & Detection Audit</h1>
-    <p>Phase 2 Vehicle Detail view scheduled for implementation.</p>
+<div class="mb-3">
+    <a href="{{ url_for('main.vehicles') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Fleet Registry
+    </a>
+</div>
+
+<!-- Vehicle Summary Header Card -->
+<div class="card-yms mb-4">
+    <div class="card-yms-body p-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="kpi-icon-wrapper icon-blue" style="width: 64px; height: 64px; font-size: 1.85rem;">
+                    <i class="bi bi-truck-front-fill"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="license-plate-badge fs-4">{{ vehicle.license_plate }}</span>
+                        {% if vehicle.status == 'Inside Yard' %}
+                            <span class="badge-status badge-inside-yard"><i class="bi bi-check-circle-fill"></i> Inside Yard</span>
+                        {% elif vehicle.status == 'Checked Out' %}
+                            <span class="badge-status badge-checked-out"><i class="bi bi-box-arrow-right"></i> Checked Out</span>
+                        {% elif vehicle.status == 'Processing' %}
+                            <span class="badge-status badge-processing"><i class="bi bi-arrow-repeat spin"></i> Processing</span>
+                        {% else %}
+                            <span class="badge-status badge-manual-review"><i class="bi bi-exclamation-triangle-fill"></i> Manual Review</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-muted small">
+                        Trailer: <strong class="text-dark font-monospace">{{ vehicle.trailer_number }}</strong> &bull;
+                        Type: <span class="text-dark">{{ vehicle.vehicle_type }}</span> &bull;
+                        Ingress: <span class="text-dark">Gate #{{ vehicle.gate_number }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operational Buttons -->
+            <div class="d-flex gap-2">
+                {% if vehicle.status == 'Inside Yard' %}
+                <button type="button" class="btn btn-warning fw-bold" onclick="alert('Initiating check-out workflow for vehicle #{{ vehicle.id }}.')">
+                    <i class="bi bi-box-arrow-right me-1"></i> Process Check-Out
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-outline-dark" onclick="alert('Audit report downloaded for record #{{ vehicle.id }}.')">
+                    <i class="bi bi-printer me-1"></i> Print Ingress Pass
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Left: Telemetry & Timestamps -->
+    <div class="col-12 col-lg-5">
+        <div class="card-yms mb-4">
+            <div class="card-yms-header">
+                <h3 class="card-yms-title fs-6">
+                    <i class="bi bi-info-circle-fill text-primary"></i>
+                    Operational Telemetry
+                </h3>
+            </div>
+            <div class="card-yms-body">
+                <table class="table table-borderless small mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted fw-semibold">Database Record ID:</td>
+                            <td class="fw-bold text-dark">#{{ vehicle.id }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Ingress Gate Lane:</td>
+                            <td class="fw-bold text-primary">Gate #{{ vehicle.gate_number }} (North Lane)</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Allocated Yard Location:</td>
+                            <td class="fw-bold text-dark">
+                                <span class="badge bg-primary-subtle text-primary border">Bay A-14</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Entry Timestamp:</td>
+                            <td class="text-dark">{{ vehicle.entry_time }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Exit Timestamp:</td>
+                            <td class="text-dark">{{ vehicle.exit_time or 'Currently Inside Facility' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Created Timestamp:</td>
+                            <td class="text-muted">{{ vehicle.created_at }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- AI Confidence Scores -->
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h3 class="card-yms-title fs-6">
+                    <i class="bi bi-cpu-fill text-indigo"></i>
+                    Vision Pipeline Confidence Metrics
+                </h3>
+            </div>
+            <div class="card-yms-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1 small">
+                        <span class="fw-bold text-secondary">YOLOv8 Detection Confidence</span>
+                        <span class="fw-bold text-success">{{ "%.1f"|format(vehicle.detection_confidence * 100) }}%</span>
+                    </div>
+                    <div class="confidence-progress" style="height: 10px;">
+                        <div class="confidence-progress-bar conf-high" style="width: {{ (vehicle.detection_confidence * 100)|int }}%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1 small">
+                        <span class="fw-bold text-secondary">PaddleOCR Character Confidence</span>
+                        <span class="fw-bold text-success">{{ "%.1f"|format(vehicle.ocr_confidence * 100) }}%</span>
+                    </div>
+                    <div class="confidence-progress" style="height: 10px;">
+                        <div class="confidence-progress-bar conf-high" style="width: {{ (vehicle.ocr_confidence * 100)|int }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Optical Inspection Crops & Audit Images -->
+    <div class="col-12 col-lg-7">
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h3 class="card-yms-title fs-6">
+                    <i class="bi bi-camera-fill text-primary"></i>
+                    Gate Camera Capture & Region Crops
+                </h3>
+            </div>
+            <div class="card-yms-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-7">
+                        <label class="form-label small fw-bold text-secondary">INGRESS CAMERA FRAME</label>
+                        <div class="vision-display-box" style="min-height: 220px;">
+                            <div class="text-center text-white-50 p-3">
+                                <i class="bi bi-camera fs-2 d-block mb-1"></i>
+                                <span class="small font-monospace">Frame Capture: 2026-09-28-gate1.jpg</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <label class="form-label small fw-bold text-secondary">LICENSE PLATE CROP & OCR</label>
+                        <div class="bg-dark p-3 rounded text-center mb-2">
+                            <span class="license-plate-badge fs-5">{{ vehicle.license_plate }}</span>
+                        </div>
+                        <div class="bg-secondary-subtle p-2 rounded text-center small text-muted font-monospace">
+                            OCR Preprocessing: Bilateral Filter + Otsu Adaptive Threshold
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit History -->
+                <h4 class="fs-6 fw-bold text-dark mt-4 mb-2">Security & Check-In Event Timeline</h4>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-camera-video text-primary me-2"></i> Ingress motion sensor triggered at Gate #{{ vehicle.gate_number }}</span>
+                        <span class="text-muted">{{ vehicle.entry_time }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-cpu text-info me-2"></i> YOLOv8 identified truck with confidence {{ (vehicle.detection_confidence * 100)|int }}%</span>
+                        <span class="text-muted">{{ vehicle.entry_time }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-check2-circle text-success me-2"></i> OCR extracted plate "{{ vehicle.license_plate }}" (Confidence: {{ (vehicle.ocr_confidence * 100)|int }}%)</span>
+                        <span class="text-muted">{{ vehicle.entry_time }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-door-open-fill text-success me-2"></i> Gate arm opened, vehicle assigned to Bay A-14</span>
+                        <span class="text-muted">{{ vehicle.entry_time }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

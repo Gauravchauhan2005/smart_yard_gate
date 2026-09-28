@@ -1,14 +1,529 @@
-/* ========================================================
-   Smart Yard Gate Automation System - Stylesheet
-   (Full responsive CSS & layout scheduled for Phase 2)
-   ======================================================== */
+/* ==========================================================================
+   AI-Based Smart Yard Gate Automation System - Core Stylesheet
+   Modern Industrial Yard Management Theme (Dark Slate + Cobalt Blue)
+   ========================================================================== */
 
 :root {
-    --primary-color: #1e3a8a;
-    --secondary-color: #0284c7;
-    --accent-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --dark-bg: #0f172a;
-    --light-bg: #f8fafc;
+    --primary: #1d4ed8;
+    --primary-hover: #1e40af;
+    --primary-light: #dbeafe;
+    --secondary: #0f172a;
+    --secondary-hover: #1e293b;
+    --surface-dark: #0f172a;
+    --sidebar-bg: #0b1120;
+    --sidebar-hover: #1e293b;
+    --sidebar-active: #1d4ed8;
+    --border-color: #e2e8f0;
+    --card-bg: #ffffff;
+    --bg-light: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --accent-cyan: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Layout & Sidebar
+   -------------------------------------------------------------------------- */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    color: #f8fafc;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar-brand {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-decoration: none;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-brand i {
+    color: var(--accent-cyan);
+    font-size: 1.5rem;
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding: 1rem 0.75rem;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.sidebar-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0.9rem;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.925rem;
+    font-weight: 500;
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.sidebar-link i {
+    font-size: 1.15rem;
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-link:hover {
+    color: #ffffff;
+    background-color: var(--sidebar-hover);
+}
+
+.sidebar-link.active {
+    color: #ffffff;
+    background-color: var(--sidebar-active);
+    box-shadow: 0 4px 12px rgba(29, 78, 216, 0.35);
+}
+
+.sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* --------------------------------------------------------------------------
+   Main Content Area & Topbar
+   -------------------------------------------------------------------------- */
+.main-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.topbar {
+    background-color: #ffffff;
+    height: 64px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.75rem;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 900;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.topbar-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #065f46;
+    background-color: #ecfdf5;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid #a7f3d0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--success);
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.content-body {
+    padding: 1.75rem;
+    flex-grow: 1;
+}
+
+/* --------------------------------------------------------------------------
+   KPI Metric Cards
+   -------------------------------------------------------------------------- */
+.kpi-card {
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.kpi-label {
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+}
+
+.kpi-value {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin: 0;
+}
+
+.kpi-subtext {
+    font-size: 0.785rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.kpi-icon-wrapper {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.45rem;
+    flex-shrink: 0;
+}
+
+.icon-blue { background-color: #eff6ff; color: #2563eb; }
+.icon-emerald { background-color: #ecfdf5; color: #059669; }
+.icon-indigo { background-color: #e0e7ff; color: #4338ca; }
+.icon-amber { background-color: #fffbeb; color: #d97706; }
+.icon-purple { background-color: #f5f3ff; color: #7c3aed; }
+
+/* --------------------------------------------------------------------------
+   Card Layouts & Containers
+   -------------------------------------------------------------------------- */
+.card-yms {
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.card-yms-header {
+    padding: 1.15rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+}
+
+.card-yms-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-yms-body {
+    padding: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   License Plate Badges & Formatters
+   -------------------------------------------------------------------------- */
+.license-plate-badge {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    border: 2px solid #0f172a;
+    border-radius: 6px;
+    font-family: "Courier New", Courier, monospace, monospace;
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    color: #0f172a;
+    padding: 0.2rem 0.65rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    position: relative;
+    text-transform: uppercase;
+}
+
+.license-plate-badge::before {
+    content: "USA";
+    font-size: 0.55rem;
+    background-color: #1e3a8a;
+    color: #ffffff;
+    padding: 0 3px;
+    border-radius: 2px;
+    margin-right: 6px;
+    font-family: sans-serif;
+    font-weight: bold;
+    letter-spacing: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Status Badges (Inside Yard, Checked Out, Processing, Manual Review)
+   -------------------------------------------------------------------------- */
+.badge-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.785rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-inside-yard {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.badge-checked-out {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.badge-processing {
+    background-color: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+.badge-manual-review {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+/* --------------------------------------------------------------------------
+   Confidence Progress Bars
+   -------------------------------------------------------------------------- */
+.confidence-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 110px;
+}
+
+.confidence-progress {
+    flex-grow: 1;
+    height: 7px;
+    background-color: #e2e8f0;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.confidence-progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.6s ease;
+}
+
+.conf-high { background-color: var(--success); }
+.conf-med { background-color: var(--warning); }
+.conf-low { background-color: var(--danger); }
+
+.confidence-text {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    width: 40px;
+    text-align: right;
+}
+
+/* --------------------------------------------------------------------------
+   Custom Tables
+   -------------------------------------------------------------------------- */
+.table-yms {
+    margin: 0;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-yms th {
+    background-color: #f8fafc;
+    color: var(--text-secondary);
+    font-size: 0.785rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table-yms td {
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table-yms tr:last-child td {
+    border-bottom: none;
+}
+
+.table-yms tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* --------------------------------------------------------------------------
+   Gate Automation Inspection Views
+   -------------------------------------------------------------------------- */
+.gate-upload-zone {
+    border: 2px dashed #94a3b8;
+    border-radius: 12px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gate-upload-zone:hover, .gate-upload-zone.drag-over {
+    border-color: var(--primary);
+    background-color: #eff6ff;
+}
+
+.gate-upload-icon {
+    font-size: 2.75rem;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+}
+
+.vision-display-box {
+    background-color: #0b1120;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.vision-display-box img {
+    max-width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+}
+
+.plate-crop-preview {
+    background: #000;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    padding: 4px;
+    display: inline-block;
+    max-height: 90px;
+}
+
+.ocr-callout-badge {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #10b981;
+    background-color: #022c22;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid #059669;
+    letter-spacing: 0.15em;
+    display: inline-block;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+    .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        bottom: 0;
+    }
+    .sidebar.open {
+        left: 0;
+    }
 }

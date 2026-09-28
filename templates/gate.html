@@ -1,10 +1,332 @@
 {% extends "base.html" %}
 
 {% block title %}Gate Automation - Smart Yard Gate{% endblock %}
+{% block page_title %}Gate Vision & Automation Center{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Gate Automation & Vision Pipeline</h1>
-    <p>Phase 2 Gate interface scheduled for implementation.</p>
+<div class="row g-4">
+    <!-- Left Column: Gate Ingress Controls & Upload -->
+    <div class="col-12 col-xl-5">
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h2 class="card-yms-title">
+                    <i class="bi bi-camera-video text-primary"></i>
+                    Gate Ingress Terminal
+                </h2>
+                <span class="badge bg-primary">Automated Lane</span>
+            </div>
+
+            <div class="card-yms-body">
+                <form id="gateUploadForm" method="POST" action="/api/detect" enctype="multipart/form-data">
+                    <!-- Gate Selector -->
+                    <div class="mb-3">
+                        <label for="gateSelect" class="form-label fw-bold small text-secondary">SELECT INGRESS GATE</label>
+                        <select class="form-select" id="gateSelect" name="gate_number">
+                            <option value="1" selected>Gate #1 - North Inbound Lane (Primary)</option>
+                            <option value="2">Gate #2 - South Inbound Lane (Heavy Freight)</option>
+                            <option value="3">Gate #3 - East Egress / Reversible Lane</option>
+                            <option value="4">Gate #4 - West Rail Transfer Lane</option>
+                        </select>
+                    </div>
+
+                    <!-- Media Type Selection -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-secondary">INGRESS CAPTURE TYPE</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="media_type" id="typeImage" value="image" checked>
+                            <label class="btn btn-outline-secondary" for="typeImage">
+                                <i class="bi bi-image me-1"></i> Still Image Capture
+                            </label>
+
+                            <input type="radio" class="btn-check" name="media_type" id="typeVideo" value="video">
+                            <label class="btn btn-outline-secondary" for="typeVideo">
+                                <i class="bi bi-camera-reels me-1"></i> Gate Video Stream
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- File Dropzone -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-secondary">VEHICLE MEDIA CAPTURE</label>
+                        <div class="gate-upload-zone" id="dropZone">
+                            <i class="bi bi-cloud-arrow-up gate-upload-icon d-block"></i>
+                            <h5 class="fw-bold mb-1">Drag & Drop Truck Image or Video</h5>
+                            <p class="text-muted small mb-2">Supports JPG, PNG, MP4, AVI (Max: 16 MB)</p>
+                            <input type="file" id="fileInput" name="file" accept="image/*,video/*" class="d-none">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="document.getElementById('fileInput').click()">
+                                <i class="bi bi-folder2-open me-1"></i> Browse Files
+                            </button>
+                            <div id="fileSelectedName" class="mt-3 text-primary fw-semibold small d-none">
+                                <i class="bi bi-file-earmark-check me-1"></i> <span id="fileNameText"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button type="button" id="startDetectionBtn" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                        <i class="bi bi-cpu me-2"></i> Start Automated Detection Pipeline
+                    </button>
+
+                    <!-- Processing Progress / Spinner -->
+                    <div id="processingIndicator" class="mt-3 text-center d-none">
+                        <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
+                        <span class="fw-semibold text-secondary small" id="processingStatusText">
+                            Running YOLOv8 vehicle detection & PaddleOCR...
+                        </span>
+                        <div class="progress mt-2" style="height: 6px;">
+                            <div id="detectionProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 45%;"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Pipeline Architecture Legend -->
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h3 class="card-yms-title fs-6">
+                    <i class="bi bi-diagram-3-fill text-info"></i>
+                    Vision Pipeline Flow
+                </h3>
+            </div>
+            <div class="card-yms-body small text-muted">
+                <ol class="mb-0 ps-3">
+                    <li class="mb-1"><strong>Frame Ingestion</strong>: Optical camera snapshot.</li>
+                    <li class="mb-1"><strong>YOLOv8 Detection</strong>: Identify truck cab & trailer bounding box.</li>
+                    <li class="mb-1"><strong>Plate Localization</strong>: Identify registration marker region.</li>
+                    <li class="mb-1"><strong>OpenCV Preprocessing</strong>: Denoising, adaptive threshold, deskew.</li>
+                    <li class="mb-1"><strong>PaddleOCR</strong>: Text recognition & confidence rating.</li>
+                    <li><strong>Gate Check-In</strong>: Record insertion & yard slot assignment.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Multi-Stage Inspection & Detection Results -->
+    <div class="col-12 col-xl-7">
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h2 class="card-yms-title">
+                    <i class="bi bi-eye-fill text-primary"></i>
+                    Multi-Stage Inspection Results
+                </h2>
+                <span class="badge bg-success" id="detectionStatusBadge">Ready for Ingress</span>
+            </div>
+
+            <div class="card-yms-body">
+                <!-- 1. Original Image vs 2. Annotated Image -->
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-bold small text-secondary">1. ORIGINAL GATE CAPTURE</label>
+                        <div class="vision-display-box" id="originalImageBox">
+                            <div class="text-center text-white-50 p-4" id="origPlaceholder">
+                                <i class="bi bi-camera fs-1 d-block mb-2"></i>
+                                <span>No capture loaded</span>
+                            </div>
+                            <img id="origImagePreview" src="" alt="Original Capture" class="d-none">
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-bold small text-secondary">2. ANNOTATED YOLO DETECTIONS</label>
+                        <div class="vision-display-box position-relative" id="annotatedImageBox">
+                            <div class="text-center text-white-50 p-4" id="annotatedPlaceholder">
+                                <i class="bi bi-bounding-box-circles fs-1 d-block mb-2"></i>
+                                <span>Awaiting detection run</span>
+                            </div>
+                            <img id="annotatedImagePreview" src="" alt="Annotated Capture" class="d-none">
+                            <div id="simulatedBox" class="d-none position-absolute border border-danger border-3 rounded"
+                                 style="top: 25%; left: 20%; width: 60%; height: 55%; box-shadow: 0 0 10px rgba(239,68,68,0.7);">
+                                <span class="badge bg-danger position-absolute top-0 start-0 translate-middle-y">Truck 94.8%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Structured Results Grid -->
+                <div class="card bg-light border p-3 mb-4">
+                    <h5 class="fw-bold fs-6 mb-3 text-dark">
+                        <i class="bi bi-info-circle me-1 text-primary"></i> Extracted Vehicle Telemetry
+                    </h5>
+
+                    <div class="row g-3">
+                        <!-- 3. Detected Vehicle -->
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block text-uppercase fw-semibold">3. Detected Vehicle</small>
+                            <span class="fw-bold text-dark fs-6" id="resVehicleType">Commercial Semi-Truck</span>
+                        </div>
+
+                        <!-- 4. Bounding Box -->
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block text-uppercase fw-semibold">4. Bounding Box</small>
+                            <span class="font-monospace text-dark small" id="resBbox">[128, 45, 960, 720]</span>
+                        </div>
+
+                        <!-- 5. Detection Confidence -->
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block text-uppercase fw-semibold">5. Detection Confidence</small>
+                            <span class="badge bg-success fs-6" id="resDetectConf">94.8%</span>
+                        </div>
+
+                        <!-- 9. Gate Number -->
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block text-uppercase fw-semibold">9. Assigned Gate</small>
+                            <span class="fw-bold text-primary" id="resGateNum">Gate #1 (North Inbound)</span>
+                        </div>
+
+                        <!-- 10. Entry Status -->
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block text-uppercase fw-semibold">10. Entry Status</small>
+                            <span class="badge-status badge-inside-yard" id="resEntryStatus">
+                                <i class="bi bi-check-circle-fill"></i> Inside Yard
+                            </span>
+                        </div>
+
+                        <!-- Assigned Yard Slot -->
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block text-uppercase fw-semibold">Allocated Slot</small>
+                            <span class="fw-bold text-indigo" id="resYardSlot">Bay A-14</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OCR & License Plate Inspection (Items 6, 7, 8) -->
+                <div class="border rounded-3 p-3 bg-white mb-4">
+                    <h5 class="fw-bold fs-6 mb-3 text-dark">
+                        <i class="bi bi-card-heading me-1 text-primary"></i> License Plate Localization & OCR
+                    </h5>
+
+                    <div class="row align-items-center g-3">
+                        <!-- 6. License Plate Crop -->
+                        <div class="col-12 col-md-4 text-center">
+                            <small class="text-muted d-block text-uppercase fw-semibold mb-2">6. License Plate Crop</small>
+                            <div class="plate-crop-preview" id="plateCropBox">
+                                <span class="license-plate-badge fs-5" id="plateDisplay">IL-8842-TR</span>
+                            </div>
+                        </div>
+
+                        <!-- 7. OCR Result Callout -->
+                        <div class="col-12 col-md-5 text-center text-md-start">
+                            <small class="text-muted d-block text-uppercase fw-semibold mb-1">7. OCR Extracted Result</small>
+                            <div class="ocr-callout-badge" id="ocrResultText">
+                                IL 8842 TR
+                            </div>
+                            <small class="d-block text-muted mt-1">Trailer ID: <strong>TL-99014-X</strong></small>
+                        </div>
+
+                        <!-- 8. OCR Confidence -->
+                        <div class="col-12 col-md-3 text-center text-md-end">
+                            <small class="text-muted d-block text-uppercase fw-semibold mb-1">8. OCR Confidence</small>
+                            <h3 class="fw-bold text-success mb-0" id="resOcrConf">97.4%</h3>
+                            <small class="text-muted">Exact match validated</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Confirmation Buttons -->
+                <div class="d-flex flex-wrap justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-danger" id="manualReviewBtn">
+                        <i class="bi bi-flag-fill me-1"></i> Flag for Manual Review
+                    </button>
+                    <button type="button" class="btn btn-success fw-bold px-4" id="confirmCheckInBtn">
+                        <i class="bi bi-check-lg me-1"></i> Confirm & Authorize Gate Open
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Interactive Gate Automation Page Scripts
+    document.addEventListener("DOMContentLoaded", function() {
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const fileSelectedName = document.getElementById("fileSelectedName");
+        const fileNameText = document.getElementById("fileNameText");
+        const startBtn = document.getElementById("startDetectionBtn");
+        const processing = document.getElementById("processingIndicator");
+        const origPlaceholder = document.getElementById("origPlaceholder");
+        const origPreview = document.getElementById("origImagePreview");
+        const annotatedPlaceholder = document.getElementById("annotatedPlaceholder");
+        const annotatedPreview = document.getElementById("annotatedImagePreview");
+        const simulatedBox = document.getElementById("simulatedBox");
+
+        // Click on dropzone opens file dialog
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        // Drag & drop listeners
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelection(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFileSelection(fileInput.files[0]);
+            }
+        });
+
+        function handleFileSelection(file) {
+            fileSelectedName.classList.remove('d-none');
+            fileNameText.textContent = file.name + ` (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    origPlaceholder.classList.add('d-none');
+                    origPreview.src = e.target.result;
+                    origPreview.classList.remove('d-none');
+
+                    annotatedPlaceholder.classList.add('d-none');
+                    annotatedPreview.src = e.target.result;
+                    annotatedPreview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            processing.classList.remove('d-none');
+            startBtn.disabled = true;
+
+            setTimeout(() => {
+                processing.classList.add('d-none');
+                startBtn.disabled = false;
+                simulatedBox.classList.remove('d-none');
+                document.getElementById('detectionStatusBadge').textContent = 'Ingress Detected & Verified';
+                document.getElementById('resDetectConf').textContent = '95.2%';
+                document.getElementById('resOcrConf').textContent = '98.1%';
+            }, 1200);
+        });
+
+        document.getElementById('confirmCheckInBtn').addEventListener('click', () => {
+            alert('Gate #1 barrier opened! Vehicle check-in recorded successfully.');
+        });
+
+        document.getElementById('manualReviewBtn').addEventListener('click', () => {
+            document.getElementById('resEntryStatus').className = 'badge-status badge-manual-review';
+            document.getElementById('resEntryStatus').innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Manual Review';
+            alert('Vehicle flagged for security officer manual verification.');
+        });
+    });
+</script>
 {% endblock %}

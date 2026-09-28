@@ -1,10 +1,258 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Smart Yard Gate{% endblock %}
+{% block title %}Dashboard - Smart Yard Gate Automation{% endblock %}
+{% block page_title %}YMS Gate Operations Dashboard{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>YMS Gate Dashboard</h1>
-    <p>Phase 2 Dashboard interface scheduled for implementation.</p>
+<!-- Top KPI Metric Cards -->
+<div class="row g-3 mb-4">
+    <!-- Vehicles Today -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Vehicles Today</div>
+                <div class="kpi-value" id="kpiVehiclesToday">{{ kpis.vehicles_today }}</div>
+                <div class="kpi-subtext text-success">
+                    <i class="bi bi-arrow-up-right"></i> +12% from yesterday
+                </div>
+            </div>
+            <div class="kpi-icon-wrapper icon-blue">
+                <i class="bi bi-truck"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicles Currently Inside -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Currently Inside</div>
+                <div class="kpi-value" id="kpiCurrentlyInside">{{ kpis.currently_inside }}</div>
+                <div class="kpi-subtext text-muted">
+                    <i class="bi bi-geo-alt"></i> 68% yard capacity
+                </div>
+            </div>
+            <div class="kpi-icon-wrapper icon-emerald">
+                <i class="bi bi-box-seam-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Automated Entries -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Automated Entries</div>
+                <div class="kpi-value" id="kpiAutomatedEntries">{{ kpis.automated_entries }}</div>
+                <div class="kpi-subtext text-success">
+                    <i class="bi bi-check2-circle"></i> 94.8% zero-touch
+                </div>
+            </div>
+            <div class="kpi-icon-wrapper icon-indigo">
+                <i class="bi bi-cpu-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average OCR Confidence -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Avg OCR Confidence</div>
+                <div class="kpi-value" id="kpiOcrConfidence">{{ "%.1f"|format(kpis.avg_ocr_confidence * 100) }}%</div>
+                <div class="kpi-subtext text-info">
+                    <i class="bi bi-fonts"></i> PaddleOCR v2.7
+                </div>
+            </div>
+            <div class="kpi-icon-wrapper icon-amber">
+                <i class="bi bi-card-text"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detection Accuracy -->
+    <div class="col-12 col-sm-6 col-xl">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Detection Accuracy</div>
+                <div class="kpi-value" id="kpiDetectionAccuracy">{{ "%.1f"|format(kpis.detection_accuracy * 100) }}%</div>
+                <div class="kpi-subtext text-success">
+                    <i class="bi bi-shield-check"></i> YOLOv8 mAP@50
+                </div>
+            </div>
+            <div class="kpi-icon-wrapper icon-purple">
+                <i class="bi bi-crosshair"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gate Lanes Status Overview -->
+<div class="row g-3 mb-4">
+    {% for gate in gates %}
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card-yms p-3 mb-0">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-dark">{{ gate.gate_name }}</span>
+                <span class="badge {{ 'bg-success' if gate.status == 'Online' else 'bg-warning text-dark' }}">
+                    {{ gate.status }}
+                </span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between small text-muted">
+                <span>Lane: Gate #{{ gate.gate_number }}</span>
+                <span>Camera: 1080p 30fps</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Main Section: Recent Gate Activity & Action Center -->
+<div class="row g-3">
+    <!-- Recent Gate Activity Table -->
+    <div class="col-12 col-xl-9">
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h2 class="card-yms-title">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    Recent Gate Activity
+                </h2>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('gate.gate_index') }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-camera-video me-1"></i> New Gate Ingress
+                    </a>
+                    <a href="{{ url_for('main.vehicles') }}" class="btn btn-sm btn-outline-secondary">
+                        View All
+                    </a>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-yms">
+                    <thead>
+                        <tr>
+                            <th>Vehicle ID</th>
+                            <th>License Plate</th>
+                            <th>Trailer Number</th>
+                            <th>Gate</th>
+                            <th>Entry Time</th>
+                            <th>Status</th>
+                            <th>Confidence</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_activity %}
+                        <tr>
+                            <td>
+                                <span class="fw-semibold text-secondary">#{{ item.id }}</span>
+                                <small class="d-block text-muted">{{ item.vehicle_type }}</small>
+                            </td>
+                            <td>
+                                <span class="license-plate-badge">{{ item.license_plate }}</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark font-monospace">{{ item.trailer_number }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">Gate {{ item.gate_number }}</span>
+                            </td>
+                            <td>
+                                <span class="text-dark">{{ item.entry_time }}</span>
+                            </td>
+                            <td>
+                                {% if item.status == 'Inside Yard' %}
+                                    <span class="badge-status badge-inside-yard">
+                                        <i class="bi bi-check-circle-fill"></i> Inside Yard
+                                    </span>
+                                {% elif item.status == 'Checked Out' %}
+                                    <span class="badge-status badge-checked-out">
+                                        <i class="bi bi-box-arrow-right"></i> Checked Out
+                                    </span>
+                                {% elif item.status == 'Processing' %}
+                                    <span class="badge-status badge-processing">
+                                        <i class="bi bi-arrow-repeat spin"></i> Processing
+                                    </span>
+                                {% else %}
+                                    <span class="badge-status badge-manual-review">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Manual Review
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="confidence-bar-wrapper">
+                                    <div class="confidence-progress">
+                                        <div class="confidence-progress-bar {{ 'conf-high' if item.confidence >= 0.85 else ('conf-med' if item.confidence >= 0.70 else 'conf-low') }}"
+                                             style="width: {{ (item.confidence * 100)|int }}%"></div>
+                                    </div>
+                                    <span class="confidence-text">{{ (item.confidence * 100)|int }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.vehicle_detail', vehicle_id=item.id) }}" class="btn btn-sm btn-light border text-primary" title="View vehicle audit trail">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Operations & Yard Overview -->
+    <div class="col-12 col-xl-3">
+        <div class="card-yms mb-3">
+            <div class="card-yms-header">
+                <h3 class="card-yms-title fs-6">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    Quick Ingress
+                </h3>
+            </div>
+            <div class="card-yms-body">
+                <p class="small text-muted mb-3">
+                    Fast automated gate check-in pipeline using live gate cameras or uploaded test captures.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('gate.gate_index') }}" class="btn btn-primary">
+                        <i class="bi bi-camera-video me-1"></i> Open Gate Camera
+                    </a>
+                    <a href="{{ url_for('main.yard') }}" class="btn btn-outline-dark">
+                        <i class="bi bi-geo-alt me-1"></i> Slot Allocation
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-yms">
+            <div class="card-yms-header">
+                <h3 class="card-yms-title fs-6">
+                    <i class="bi bi-pie-chart-fill text-info"></i>
+                    Status Breakdown
+                </h3>
+            </div>
+            <div class="card-yms-body">
+                <ul class="list-unstyled mb-0 small">
+                    <li class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-success"><i class="bi bi-dot fs-4 align-middle"></i> Inside Yard</span>
+                        <span class="fw-bold">42</span>
+                    </li>
+                    <li class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary"><i class="bi bi-dot fs-4 align-middle"></i> Checked Out</span>
+                        <span class="fw-bold">103</span>
+                    </li>
+                    <li class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-primary"><i class="bi bi-dot fs-4 align-middle"></i> Processing</span>
+                        <span class="fw-bold">3</span>
+                    </li>
+                    <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-danger"><i class="bi bi-dot fs-4 align-middle"></i> Manual Review</span>
+                        <span class="fw-bold">4</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

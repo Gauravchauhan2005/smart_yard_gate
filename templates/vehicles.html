@@ -1,10 +1,217 @@
 {% extends "base.html" %}
 
-{% block title %}Vehicle Directory - Smart Yard Gate{% endblock %}
+{% block title %}Vehicles - Smart Yard Gate{% endblock %}
+{% block page_title %}Fleet & Vehicle Registry{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Vehicle Logs & Check-In History</h1>
-    <p>Phase 2 Vehicles interface scheduled for implementation.</p>
+<div class="card-yms mb-4">
+    <div class="card-yms-header">
+        <h2 class="card-yms-title">
+            <i class="bi bi-filter-square text-primary"></i>
+            Filter & Search Fleet Ingress Records
+        </h2>
+        <span class="text-muted small">Showing {{ vehicles|length }} Total Records</span>
+    </div>
+    <div class="card-yms-body">
+        <form class="row g-3" id="vehicleFilterForm">
+            <!-- Search Keyword -->
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-bold text-secondary">SEARCH VEHICLE</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="searchPlate" placeholder="Filter by plate or trailer...">
+                </div>
+            </div>
+
+            <!-- Gate Filter -->
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary">GATE LANE</label>
+                <select class="form-select" id="filterGate">
+                    <option value="">All Gates</option>
+                    <option value="1">Gate #1</option>
+                    <option value="2">Gate #2</option>
+                    <option value="3">Gate #3</option>
+                    <option value="4">Gate #4</option>
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary">STATUS</label>
+                <select class="form-select" id="filterStatus">
+                    <option value="">All Statuses</option>
+                    <option value="Inside Yard">Inside Yard</option>
+                    <option value="Checked Out">Checked Out</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Manual Review">Manual Review</option>
+                </select>
+            </div>
+
+            <!-- Vehicle Type Filter -->
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary">VEHICLE TYPE</label>
+                <select class="form-select" id="filterType">
+                    <option value="">All Types</option>
+                    <option value="Semi-Truck">Semi-Truck</option>
+                    <option value="Box Truck">Box Truck</option>
+                    <option value="Flatbed">Flatbed</option>
+                    <option value="Tanker">Tanker</option>
+                </select>
+            </div>
+
+            <!-- Reset / Export -->
+            <div class="col-6 col-md-2 d-flex align-items-end gap-2">
+                <button type="button" class="btn btn-outline-secondary w-100" id="resetFilterBtn">
+                    Reset
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<!-- Vehicles Table -->
+<div class="card-yms">
+    <div class="card-yms-header">
+        <h2 class="card-yms-title">
+            <i class="bi bi-table text-primary"></i>
+            Vehicle Movement Logs
+        </h2>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-success" onclick="alert('Exporting fleet logs to CSV format...')">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table-yms" id="vehiclesTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>License Plate</th>
+                    <th>Trailer Number</th>
+                    <th>Type</th>
+                    <th>Gate</th>
+                    <th>Entry Time</th>
+                    <th>Exit Time</th>
+                    <th>Status</th>
+                    <th>Confidence</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vehicles %}
+                <tr data-plate="{{ v.license_plate }}" data-trailer="{{ v.trailer_number }}" data-gate="{{ v.gate_number }}" data-status="{{ v.status }}" data-type="{{ v.vehicle_type }}">
+                    <td>
+                        <span class="fw-bold text-secondary">#{{ v.id }}</span>
+                    </td>
+                    <td>
+                        <span class="license-plate-badge">{{ v.license_plate }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-dark font-monospace">{{ v.trailer_number }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ v.vehicle_type }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-semibold">Gate {{ v.gate_number }}</span>
+                    </td>
+                    <td>
+                        <small class="text-dark d-block">{{ v.entry_time }}</small>
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ v.exit_time or '—' }}</small>
+                    </td>
+                    <td>
+                        {% if v.status == 'Inside Yard' %}
+                            <span class="badge-status badge-inside-yard">
+                                <i class="bi bi-check-circle-fill"></i> Inside Yard
+                            </span>
+                        {% elif v.status == 'Checked Out' %}
+                            <span class="badge-status badge-checked-out">
+                                <i class="bi bi-box-arrow-right"></i> Checked Out
+                            </span>
+                        {% elif v.status == 'Processing' %}
+                            <span class="badge-status badge-processing">
+                                <i class="bi bi-arrow-repeat spin"></i> Processing
+                            </span>
+                        {% else %}
+                            <span class="badge-status badge-manual-review">
+                                <i class="bi bi-exclamation-triangle-fill"></i> Manual Review
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="confidence-bar-wrapper">
+                            <div class="confidence-progress">
+                                <div class="confidence-progress-bar {{ 'conf-high' if v.detection_confidence >= 0.85 else 'conf-med' }}"
+                                     style="width: {{ (v.detection_confidence * 100)|int }}%"></div>
+                            </div>
+                            <span class="confidence-text">{{ (v.detection_confidence * 100)|int }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.vehicle_detail', vehicle_id=v.id) }}" class="btn btn-sm btn-outline-primary" title="View vehicle detail">
+                            <i class="bi bi-file-text"></i> Audit
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const searchInput = document.getElementById("searchPlate");
+        const gateSelect = document.getElementById("filterGate");
+        const statusSelect = document.getElementById("filterStatus");
+        const typeSelect = document.getElementById("filterType");
+        const resetBtn = document.getElementById("resetFilterBtn");
+        const rows = document.querySelectorAll("#vehiclesTable tbody tr");
+
+        function filterRows() {
+            const query = searchInput.value.toLowerCase().trim();
+            const gate = gateSelect.value;
+            const status = statusSelect.value;
+            const type = typeSelect.value;
+
+            rows.forEach(row => {
+                const plate = (row.dataset.plate || "").toLowerCase();
+                const trailer = (row.dataset.trailer || "").toLowerCase();
+                const rowGate = row.dataset.gate || "";
+                const rowStatus = row.dataset.status || "";
+                const rowType = row.dataset.type || "";
+
+                const matchesQuery = !query || plate.includes(query) || trailer.includes(query);
+                const matchesGate = !gate || rowGate === gate;
+                const matchesStatus = !status || rowStatus === status;
+                const matchesType = !type || rowType === type;
+
+                if (matchesQuery && matchesGate && matchesStatus && matchesType) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        searchInput.addEventListener("input", filterRows);
+        gateSelect.addEventListener("change", filterRows);
+        statusSelect.addEventListener("change", filterRows);
+        typeSelect.addEventListener("change", filterRows);
+
+        resetBtn.addEventListener("click", () => {
+            searchInput.value = "";
+            gateSelect.value = "";
+            statusSelect.value = "";
+            typeSelect.value = "";
+            filterRows();
+        });
+    });
+</script>
 {% endblock %}
