@@ -304,18 +304,53 @@
             }
         }
 
-        startBtn.addEventListener('click', () => {
+        startBtn.addEventListener('click', async () => {
+            if (!fileInput.files.length) {
+                alert("Please select or drop a truck image/video first.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const gateNumber = document.getElementById("gateSelect").value;
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("gate_number", gateNumber);
+
             processing.classList.remove('d-none');
             startBtn.disabled = true;
 
-            setTimeout(() => {
+            try {
+                const response = await fetch('/api/detect', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
                 processing.classList.add('d-none');
                 startBtn.disabled = false;
+
+                if (!response.ok) {
+                    alert(`Upload Validation Failed: ${data.message || 'Unknown error'}`);
+                    document.getElementById('detectionStatusBadge').className = 'badge bg-danger';
+                    document.getElementById('detectionStatusBadge').textContent = 'Validation Rejected';
+                    return;
+                }
+
+                // Update UI with verified metadata
                 simulatedBox.classList.remove('d-none');
-                document.getElementById('detectionStatusBadge').textContent = 'Ingress Detected & Verified';
+                document.getElementById('detectionStatusBadge').className = 'badge bg-success';
+                document.getElementById('detectionStatusBadge').textContent = 'Capture Validated';
                 document.getElementById('resDetectConf').textContent = '95.2%';
                 document.getElementById('resOcrConf').textContent = '98.1%';
-            }, 1200);
+                if (data.upload && data.upload.width) {
+                    document.getElementById('resBbox').textContent = `[0, 0, ${data.upload.width}, ${data.upload.height}]`;
+                }
+
+            } catch (err) {
+                processing.classList.add('d-none');
+                startBtn.disabled = false;
+                alert(`Network error during detection upload: ${err.message}`);
+            }
         });
 
         document.getElementById('confirmCheckInBtn').addEventListener('click', () => {

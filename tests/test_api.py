@@ -122,9 +122,77 @@ def test_not_found_error_handler(client):
     assert data["status_code"] == 404
 
 
-def test_detect_placeholder_returns_501(client):
-    """Test that unimplemented future API endpoint returns 501."""
-    response = client.post("/api/detect")
-    assert response.status_code == 501
+def test_upload_missing_file_returns_400(client):
+    """Test that POST /api/upload without file returns 400 Bad Request."""
+    response = client.post("/api/upload")
+    assert response.status_code == 400
     data = response.get_json()
-    assert data["error"] == "Not Implemented"
+    assert data["error"] == "Bad Request"
+
+
+def test_upload_invalid_extension_returns_400(client):
+    """Test that POST /api/upload with forbidden extension returns 400."""
+    import io
+    data = {
+        "file": (io.BytesIO(b"malicious script"), "exploit.exe")
+    }
+    response = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    json_data = response.get_json()
+    assert json_data["error"] == "Validation Error"
+
+
+def test_upload_corrupted_image_returns_400(client):
+    """Test that POST /api/upload with corrupted image bytes returns 400."""
+    import io
+    data = {
+        "file": (io.BytesIO(b"RANDOM_NON_IMAGE_BYTES_12345"), "truck.jpg")
+    }
+    response = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    json_data = response.get_json()
+    assert json_data["error"] == "Validation Error"
+
+
+def test_upload_valid_image_returns_201(client):
+    """Test that POST /api/upload with valid JPEG returns 201 Created."""
+    import io
+    from PIL import Image
+
+    img = Image.new("RGB", (200, 150), color="red")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    data = {
+        "file": (buf, "test_truck.jpg"),
+        "gate_number": "1",
+    }
+    response = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    assert response.status_code == 201
+    json_data = response.get_json()
+    assert json_data["status"] == "success"
+    assert json_data["data"]["media_type"] == "image"
+    assert json_data["data"]["width"] == 200
+    assert json_data["data"]["height"] == 150
+
+
+def test_detect_endpoint_with_valid_image(client):
+    """Test that POST /api/detect validates and accepts incoming frame."""
+    import io
+    from PIL import Image
+
+    img = Image.new("RGB", (320, 240), color="blue")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    data = {
+        "file": (buf, "inbound_semi.jpg"),
+        "gate_number": "2",
+    }
+    response = client.post("/api/detect", data=data, content_type="multipart/form-data")
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data["status"] == "success"
+    assert json_data["detection"]["ready"] is True
