@@ -96,6 +96,21 @@ def create_app(config_name: str | None = None) -> Flask:
     # Initialize database
     db.init_app(app)
 
+    # Auto-create tables and seed data on initial startup (e.g. serverless or container deploy)
+    if config_name != "testing":
+        with app.app_context():
+            try:
+                db.create_all()
+                from database.models import Gate
+                if not Gate.query.first():
+                    from scripts.init_db import seed_gates, seed_yard_locations, seed_vehicles
+                    seed_gates()
+                    seed_yard_locations()
+                    seed_vehicles()
+                    app.logger.info("Database auto-initialized with seed dataset.")
+            except Exception as e:
+                app.logger.warning(f"Database auto-init deferred: {e}")
+
     # Register blueprints and handlers
     register_blueprints(app)
     register_error_handlers(app)

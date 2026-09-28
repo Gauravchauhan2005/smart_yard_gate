@@ -21,21 +21,30 @@ class Config:
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", 5000))
 
+    IS_VERCEL = os.getenv("VERCEL") == "1"
+
     # File Upload Configuration
-    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", str(BASE_DIR / "static" / "uploads"))
+    UPLOAD_FOLDER = os.getenv(
+        "UPLOAD_FOLDER",
+        "/tmp/uploads" if IS_VERCEL else str(BASE_DIR / "static" / "uploads"),
+    )
     MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", 16 * 1024 * 1024))  # 16 MB default
     ALLOWED_EXTENSIONS = set(
         os.getenv("ALLOWED_EXTENSIONS", "png,jpg,jpeg,mp4,avi,mov").split(",")
     )
 
     # Database Configuration
-    USE_SQLITE = os.getenv("USE_SQLITE", "false").lower() in ("true", "1", "yes")
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    USE_SQLITE = os.getenv("USE_SQLITE", "true" if IS_VERCEL else "false").lower() in ("true", "1", "yes")
     DB_USER = os.getenv("DB_USER", "root")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "3306")
     DB_NAME = os.getenv("DB_NAME", "smart_yard_db")
-    SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", str(BASE_DIR / "smart_yard.db"))
+    SQLITE_DB_PATH = os.getenv(
+        "SQLITE_DB_PATH",
+        "/tmp/smart_yard.db" if IS_VERCEL else str(BASE_DIR / "smart_yard.db"),
+    )
 
     @staticmethod
     def build_database_uri(
@@ -48,6 +57,12 @@ class Config:
         sqlite_path: str,
     ) -> str:
         """Construct database URI based on active environment flags."""
+        db_url = os.getenv("DATABASE_URL")
+        if db_url:
+            if db_url.startswith("postgres://"):
+                db_url = db_url.replace("postgres://", "postgresql://", 1)
+            return db_url
+
         if use_sqlite or not db_password:
             return f"sqlite:///{sqlite_path}"
         return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
