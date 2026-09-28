@@ -7,12 +7,37 @@ import pytest
 from app import create_app
 
 
+from database import db, Vehicle, Gate, YardLocation
+
+
 @pytest.fixture
 def client():
     """Create and configure a testing client for the application."""
     test_app = create_app("testing")
+    with test_app.app_context():
+        db.create_all()
+        # Seed test vehicle for detail view test
+        v = Vehicle(
+            id=101,
+            license_plate="IL-8842-TR",
+            trailer_number="TL-99014-X",
+            vehicle_type="Semi-Truck",
+            gate_number=1,
+            status="Inside Yard",
+            detection_confidence=0.95,
+            ocr_confidence=0.98,
+        )
+        db.session.add(v)
+        loc = YardLocation(location_code="Bay A-14", status="Occupied", vehicle_id=101)
+        db.session.add(loc)
+        db.session.commit()
+
     with test_app.test_client() as test_client:
         yield test_client
+
+    with test_app.app_context():
+        db.session.remove()
+        db.drop_all()
 
 
 def test_health_check_endpoint(client):

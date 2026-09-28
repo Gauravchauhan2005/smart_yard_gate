@@ -1,8 +1,9 @@
 """
 Database package for Smart Yard Gate Automation System.
-Contains SQLAlchemy database instance initialization and ORM models.
+Exports SQLAlchemy database instance and ORM models.
 """
 
 from .db import db
+from .models import Vehicle, Gate, YardLocation, Detection
 
-__all__ = ["db"]
+__all__ = ["db", "Vehicle", "Gate", "YardLocation", "Detection"]

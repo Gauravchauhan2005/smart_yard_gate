@@ -7,16 +7,18 @@ import os
 import logging
 from flask import Flask, jsonify
 from config import config_by_name, BASE_DIR
+from database.db import db
 
 
 def configure_logging(app: Flask) -> None:
     """Set up standardized logging format and handlers."""
     log_level = logging.DEBUG if app.config.get("DEBUG", False) else logging.INFO
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=log_level,
+            format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
     app.logger.setLevel(log_level)
     app.logger.info(f"Logging initialized at level: {logging.getLevelName(log_level)}")
 
@@ -90,6 +92,9 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Setup logging
     configure_logging(app)
+
+    # Initialize database
+    db.init_app(app)
 
     # Register blueprints and handlers
     register_blueprints(app)

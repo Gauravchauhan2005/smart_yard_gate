@@ -37,21 +37,25 @@ class Config:
     DB_NAME = os.getenv("DB_NAME", "smart_yard_db")
     SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", str(BASE_DIR / "smart_yard.db"))
 
-    @classmethod
-    def get_database_uri(cls) -> str:
+    @staticmethod
+    def build_database_uri(
+        use_sqlite: bool,
+        db_user: str,
+        db_password: str,
+        db_host: str,
+        db_port: str,
+        db_name: str,
+        sqlite_path: str,
+    ) -> str:
         """Construct database URI based on active environment flags."""
-        if cls.USE_SQLITE or not cls.DB_PASSWORD:
-            return f"sqlite:///{cls.SQLITE_DB_PATH}"
-        return (
-            f"mysql+pymysql://{cls.DB_USER}:{cls.DB_PASSWORD}"
-            f"@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
-        )
+        if use_sqlite or not db_password:
+            return f"sqlite:///{sqlite_path}"
+        return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    @property
-    def SQLALCHEMY_DATABASE_URI(self) -> str:
-        return self.get_database_uri()
+    SQLALCHEMY_DATABASE_URI = build_database_uri(
+        USE_SQLITE, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, SQLITE_DB_PATH
+    )
 
     # YOLO & Computer Vision Configuration
     YOLO_MODEL_PATH = os.getenv(
@@ -87,15 +91,15 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
 
-    @classmethod
-    def get_database_uri(cls) -> str:
-        """Production requires configured database credentials."""
-        if cls.USE_SQLITE:
-            return f"sqlite:///{cls.SQLITE_DB_PATH}"
-        return (
-            f"mysql+pymysql://{cls.DB_USER}:{cls.DB_PASSWORD}"
-            f"@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
-        )
+    SQLALCHEMY_DATABASE_URI = Config.build_database_uri(
+        Config.USE_SQLITE,
+        Config.DB_USER,
+        Config.DB_PASSWORD,
+        Config.DB_HOST,
+        Config.DB_PORT,
+        Config.DB_NAME,
+        Config.SQLITE_DB_PATH,
+    )
 
 
 config_by_name = {
