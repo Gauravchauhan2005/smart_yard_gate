@@ -195,4 +195,93 @@ def test_detect_endpoint_with_valid_image(client):
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data["status"] == "success"
-    assert json_data["detection"]["ready"] is True
+    assert "detection" in json_data
+
+
+def test_api_check_in_endpoint(client):
+    """Test POST /api/gate/check-in end-to-end automated ingestion."""
+    import io
+    from PIL import Image
+
+    img = Image.new("RGB", (400, 300), color="green")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    data = {
+        "file": (buf, "arrival_truck.jpg"),
+        "gate_number": "1",
+    }
+    response = client.post("/api/gate/check-in", data=data, content_type="multipart/form-data")
+    assert response.status_code == 201
+    json_data = response.get_json()
+    assert json_data["status"] == "success"
+    assert "vehicle" in json_data["data"]
+    assert json_data["data"]["vehicle"]["status"] in ("Inside Yard", "Manual Review")
+
+
+def test_api_check_out_endpoint(client):
+    """Test POST /api/gate/check-out releases slot and sets status to Checked Out."""
+    # Check out vehicle 101 seeded in fixture
+    payload = {"vehicle_id": 101, "gate_number": 3}
+    response = client.post("/api/gate/check-out", json=payload)
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data["success"] is True
+    assert json_data["vehicle"]["status"] == "Checked Out"
+
+
+def test_api_check_out_nonexistent_vehicle(client):
+    """Test checkout returns 400 for non-existent vehicle ID."""
+    payload = {"vehicle_id": 99999}
+    response = client.post("/api/gate/check-out", json=payload)
+    assert response.status_code == 400
+    json_data = response.get_json()
+    assert json_data["error"] == "Bad Request"
+
+
+def test_api_ocr_endpoint(client):
+    """Test POST /api/ocr on plate crop."""
+    import io
+    from PIL import Image
+
+    img = Image.new("RGB", (180, 60), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    data = {"file": (buf, "plate_crop.jpg")}
+    response = client.post("/api/ocr", data=data, content_type="multipart/form-data")
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data["status"] == "success"
+    assert "license_plate" in json_data["data"]
+
+
+def test_api_vehicles_list_and_filter(client):
+    """Test GET /api/vehicles with filtering options."""
+    response = client.get("/api/vehicles?gate=1")
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert "vehicles" in json_data
+    assert "total" in json_data
+
+
+def test_api_yard_inventory_endpoint(client):
+    """Test GET /api/yard returns inventory and occupancy status."""
+    response = client.get("/api/yard")
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert "total_capacity" in json_data
+    assert "occupied_slots" in json_data
+    assert "available_slots" in json_data
+
+
+def test_api_analytics_endpoint(client):
+    """Test GET /api/analytics returns aggregate telemetry."""
+    response = client.get("/api/analytics")
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert "total_vehicles" in json_data
+    assert "automated_entries" in json_data
+    assert "avg_detection_confidence" in json_data

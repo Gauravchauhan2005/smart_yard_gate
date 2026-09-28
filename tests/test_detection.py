@@ -151,3 +151,105 @@ def test_valid_video_signature(uploader):
     assert meta["status"] == "validated"
     assert meta["media_type"] == "video"
     assert Path(meta["absolute_path"]).exists()
+
+
+def test_image_preprocessor_pipeline():
+    """Verify OpenCV preprocessing steps and strategies."""
+    import numpy as np
+    from detection.preprocessing import ImagePreprocessor
+
+    # Create dummy color image
+    dummy_img = np.zeros((100, 250, 3), dtype=np.uint8)
+    dummy_img[20:80, 20:230] = 200  # Plate rectangle
+
+    # 1. Grayscale
+    gray = ImagePreprocessor.to_grayscale(dummy_img)
+    assert len(gray.shape) == 2
+
+    # 2. Resize
+    resized = ImagePreprocessor.resize_plate(dummy_img, target_height=64)
+    assert resized.shape[0] == 64
+
+    # 3. Crop
+    cropped = ImagePreprocessor.crop_region(dummy_img, [20, 20, 230, 80], margin=2)
+    assert cropped.size > 0
+
+    # 4. Pipeline strategies
+    out_std, meta_std = ImagePreprocessor.preprocess_pipeline(dummy_img, strategy="standard")
+    assert out_std is not None
+    assert meta_std["strategy"] == "standard"
+
+    out_adapt, meta_adapt = ImagePreprocessor.preprocess_pipeline(dummy_img, strategy="adaptive")
+    assert out_adapt is not None
+
+    out_contrast, meta_contrast = ImagePreprocessor.preprocess_pipeline(dummy_img, strategy="contrast_boost")
+    assert out_contrast is not None
+
+
+def test_plate_detector_localization():
+    """Verify plate detector extracts candidate bounding box and crop."""
+    import numpy as np
+    from detection.plate_detector import PlateDetector
+
+    dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    # Draw simulated rectangular plate
+    dummy_frame[300:360, 220:420] = 255
+
+    detector = PlateDetector()
+    results = detector.detect_plates(dummy_frame)
+
+    assert len(results) > 0
+    plate = results[0]
+    assert "bbox" in plate
+    assert "confidence" in plate
+    assert "crop" in plate
+    assert plate["confidence"] > 0.0
+
+
+def test_ocr_text_cleaning_and_heuristics():
+    """Verify OCR character cleaning and domain error corrections."""
+    from detection.ocr import PlateOCR
+
+    # 1. Clean punctuation and spaces
+    raw1 = " [il 8842-tr]  "
+    clean1 = PlateOCR.clean_and_normalize_text(raw1)
+    assert clean1 == "IL-8842-TR"
+
+    # 2. Number heuristics: replace O with 0, I with 1 in digit blocks
+    raw2 = "TX-4O19-BB"
+    corrected2 = PlateOCR.correct_plate_heuristics(raw2)
+    assert corrected2 == "TX-4019-BB"
+
+    # 3. Empty string
+    assert PlateOCR.clean_and_normalize_text("") == ""
+
+
+def test_ocr_service_recognition():
+    """Verify OCRService runs extraction and returns structured payload."""
+    import numpy as np
+    from services.ocr_service import OCRService
+
+    dummy_plate = np.ones((60, 200, 3), dtype=np.uint8) * 255
+    ocr_svc = OCRService()
+    res = ocr_svc.recognize_plate(dummy_plate)
+
+    assert "license_plate" in res
+    assert "trailer_number" in res
+    assert "ocr_confidence" in res
+    assert "needs_manual_review" in res
+
+
+def test_detection_service_pipeline(upload_dir):
+    """Verify DetectionService coordinates vehicle detection and visual artifacts."""
+    import numpy as np
+    from services.detection_service import DetectionService
+
+    dummy_frame = np.zeros((300, 400, 3), dtype=np.uint8)
+    det_svc = DetectionService(output_dir=upload_dir)
+    res = det_svc.process_frame(dummy_frame, gate_number=1, save_visuals=True)
+
+    assert "vehicle" in res
+    assert "plate" in res
+    assert "visuals" in res
+    assert "detected" in res["vehicle"]
+    assert res["visuals"]["annotated_image"] is not None

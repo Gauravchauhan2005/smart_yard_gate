@@ -11,6 +11,9 @@ from .upload_service import (
     CorruptImageError,
     FileSizeExceededError,
 )
+from .detection_service import DetectionService
+from .ocr_service import OCRService
+from .vehicle_service import VehicleService
 
 __all__ = [
     "UploadService",
@@ -19,4 +22,7 @@ __all__ = [
     "InvalidExtensionError",
     "CorruptImageError",
     "FileSizeExceededError",
+    "DetectionService",
+    "OCRService",
+    "VehicleService",
 ]

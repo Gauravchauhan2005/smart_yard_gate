@@ -48,6 +48,9 @@ instance/
 *.db
 
 # Computer Vision & Deep Learning weights / cache
+*.pt
+*.onnx
+*.engine
 models/yolo/*.pt
 models/yolo/*.onnx
 models/yolo/*.engine
