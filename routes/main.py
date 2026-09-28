@@ -45,10 +45,10 @@ def dashboard():
     gates = Gate.query.order_by(Gate.gate_number).all()
     if not gates:
         gates = [
-            Gate(gate_number=1, gate_name="Gate #1 - North Inbound", status="Online"),
-            Gate(gate_number=2, gate_name="Gate #2 - South Inbound", status="Online"),
-            Gate(gate_number=3, gate_name="Gate #3 - East Egress", status="Online"),
-            Gate(gate_number=4, gate_name="Gate #4 - West Rail Transfer", status="Online"),
+            Gate(gate_number=1, gate_name="Gate #1 - JNPT Nhava Sheva Inbound", status="Online"),
+            Gate(gate_number=2, gate_name="Gate #2 - Bhiwandi Logistics Corridor Inbound", status="Online"),
+            Gate(gate_number=3, gate_name="Gate #3 - Mumbai-Pune Expressway Outbound", status="Online"),
+            Gate(gate_number=4, gate_name="Gate #4 - CONCOR DFC Rail Freight Siding", status="Online"),
         ]
 
     # Query recent activity

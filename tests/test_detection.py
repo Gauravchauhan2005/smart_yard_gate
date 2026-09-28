@@ -207,20 +207,30 @@ def test_plate_detector_localization():
 
 
 def test_ocr_text_cleaning_and_heuristics():
-    """Verify OCR character cleaning and domain error corrections."""
+    """Verify OCR character cleaning and Indian HSRP domain error corrections."""
     from detection.ocr import PlateOCR
 
     # 1. Clean punctuation and spaces
-    raw1 = " [il 8842-tr]  "
+    raw1 = " [mh 12-rn-8842]  "
     clean1 = PlateOCR.clean_and_normalize_text(raw1)
-    assert clean1 == "IL-8842-TR"
+    assert clean1 == "MH-12-RN-8842"
 
-    # 2. Number heuristics: replace O with 0, I with 1 in digit blocks
-    raw2 = "TX-4O19-BB"
-    corrected2 = PlateOCR.correct_plate_heuristics(raw2)
-    assert corrected2 == "TX-4019-BB"
+    # 2. Indian HSRP Number heuristics: formats SS-RR-LL-NNNN with character error correction
+    raw2 = "MH-12-RN-8842"
+    corrected2 = PlateOCR.correct_plate_heuristics("MH12RN8842")
+    assert corrected2 == "MH-12-RN-8842"
 
-    # 3. Empty string
+    # 3. Disambiguate letter 'O' vs digit '0' in RTO code
+    raw_ocr_misread = "MHO2RN8842"
+    corrected3 = PlateOCR.correct_plate_heuristics(raw_ocr_misread)
+    assert corrected3 == "MH-02-RN-8842"
+
+    # 4. Disambiguate letter 'B' vs digit '8' in 4-digit registration
+    raw_ocr_misread2 = "MH12RNB842"
+    corrected4 = PlateOCR.correct_plate_heuristics(raw_ocr_misread2)
+    assert corrected4 == "MH-12-RN-8842"
+
+    # 5. Empty string
     assert PlateOCR.clean_and_normalize_text("") == ""
 
 

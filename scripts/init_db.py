@@ -18,10 +18,10 @@ from database import db, Vehicle, Gate, YardLocation, Detection
 def seed_gates():
     """Seed standard gate lanes if not present."""
     default_gates = [
-        {"gate_number": 1, "gate_name": "Gate #1 - North Inbound", "status": "Online"},
-        {"gate_number": 2, "gate_name": "Gate #2 - South Inbound", "status": "Online"},
-        {"gate_number": 3, "gate_name": "Gate #3 - East Egress", "status": "Online"},
-        {"gate_number": 4, "gate_name": "Gate #4 - West Rail Transfer", "status": "Online"},
+        {"gate_number": 1, "gate_name": "Gate #1 - JNPT Nhava Sheva Inbound", "status": "Online"},
+        {"gate_number": 2, "gate_name": "Gate #2 - Bhiwandi Logistics Corridor Inbound", "status": "Online"},
+        {"gate_number": 3, "gate_name": "Gate #3 - Mumbai-Pune Expressway Outbound", "status": "Online"},
+        {"gate_number": 4, "gate_name": "Gate #4 - CONCOR DFC Rail Freight Siding", "status": "Online"},
     ]
 
     count = 0
@@ -81,9 +81,9 @@ def seed_vehicles():
 
     sample_vehicles = [
         {
-            "license_plate": "IL-8842-TR",
-            "trailer_number": "TL-99014-X",
-            "vehicle_type": "Semi-Truck",
+            "license_plate": "MH-12-RN-8842",
+            "trailer_number": "NL-01-T-8842",
+            "vehicle_type": "Tata Prima 5530.S (Heavy Hauler)",
             "gate_number": 1,
             "status": "Inside Yard",
             "detection_confidence": 0.952,
@@ -93,9 +93,9 @@ def seed_vehicles():
             "location_code": "Bay A-14",
         },
         {
-            "license_plate": "TX-4019-BB",
-            "trailer_number": "TL-55120-A",
-            "vehicle_type": "Semi-Truck",
+            "license_plate": "KA-01-MJ-5512",
+            "trailer_number": "NL-01-T-5512",
+            "vehicle_type": "Ashok Leyland 4220 (Multi-Axle)",
             "gate_number": 2,
             "status": "Inside Yard",
             "detection_confidence": 0.924,
@@ -105,9 +105,9 @@ def seed_vehicles():
             "location_code": "Bay B-04",
         },
         {
-            "license_plate": "OH-1932-KL",
-            "trailer_number": "TL-88231-M",
-            "vehicle_type": "Box Truck",
+            "license_plate": "GJ-06-AX-3021",
+            "trailer_number": "IND-TR-3021",
+            "vehicle_type": "BharatBenz 3528C (Container)",
             "gate_number": 1,
             "status": "Checked Out",
             "detection_confidence": 0.961,
@@ -117,9 +117,9 @@ def seed_vehicles():
             "location_code": None,
         },
         {
-            "license_plate": "CA-7781-ZZ",
-            "trailer_number": "TL-11004-D",
-            "vehicle_type": "Semi-Truck",
+            "license_plate": "DL-01-AB-1932",
+            "trailer_number": "NL-01-T-1932",
+            "vehicle_type": "Tata Signa 4825.TK (Tipper/Hauler)",
             "gate_number": 2,
             "status": "Manual Review",
             "detection_confidence": 0.742,
@@ -129,9 +129,9 @@ def seed_vehicles():
             "location_code": "Inspection Bay 2",
         },
         {
-            "license_plate": "GA-3021-MM",
-            "trailer_number": "TL-33921-R",
-            "vehicle_type": "Flatbed",
+            "license_plate": "HR-26-DQ-7781",
+            "trailer_number": "IND-TR-7781",
+            "vehicle_type": "Eicher Pro 6048 (Flatbed)",
             "gate_number": 1,
             "status": "Inside Yard",
             "detection_confidence": 0.948,
@@ -141,9 +141,9 @@ def seed_vehicles():
             "location_code": "Bay C-09",
         },
         {
-            "license_plate": "PA-6523-XC",
-            "trailer_number": "TL-77412-C",
-            "vehicle_type": "Tanker",
+            "license_plate": "TN-09-BX-6523",
+            "trailer_number": "IND-TR-6523",
+            "vehicle_type": "Tata LPT 3118 (Chemical Tanker)",
             "gate_number": 3,
             "status": "Processing",
             "detection_confidence": 0.912,
@@ -151,6 +151,18 @@ def seed_vehicles():
             "entry_time": now - timedelta(minutes=15),
             "exit_time": None,
             "location_code": "Holding Area 1",
+        },
+        {
+            "license_plate": "WB-23-CD-9021",
+            "trailer_number": "IND-TR-9021",
+            "vehicle_type": "Ashok Leyland 5525 (Heavy Commercial)",
+            "gate_number": 4,
+            "status": "Inside Yard",
+            "detection_confidence": 0.935,
+            "ocr_confidence": 0.972,
+            "entry_time": now - timedelta(minutes=30),
+            "exit_time": None,
+            "location_code": "Bay A-05",
         },
     ]
 

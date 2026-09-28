@@ -29,13 +29,13 @@ def session(app):
 
 def test_gate_model_crud(session):
     """Test creating, querying, and serializing a Gate record."""
-    gate = Gate(gate_number=1, gate_name="Gate #1 - North Inbound", status="Online")
+    gate = Gate(gate_number=1, gate_name="Gate #1 - JNPT Nhava Sheva Inbound", status="Online")
     session.add(gate)
     session.commit()
 
     saved_gate = Gate.query.filter_by(gate_number=1).first()
     assert saved_gate is not None
-    assert saved_gate.gate_name == "Gate #1 - North Inbound"
+    assert saved_gate.gate_name == "Gate #1 - JNPT Nhava Sheva Inbound"
     assert saved_gate.status == "Online"
 
     d = saved_gate.to_dict()
@@ -59,9 +59,9 @@ def test_duplicate_gate_number_constraint(session):
 def test_vehicle_model_crud(session):
     """Test creating, querying, and serializing a Vehicle record."""
     vehicle = Vehicle(
-        license_plate="IL-8842-TR",
-        trailer_number="TL-99014-X",
-        vehicle_type="Semi-Truck",
+        license_plate="MH-12-RN-8842",
+        trailer_number="NL-01-T-8842",
+        vehicle_type="Tata Prima 5530.S (Heavy Hauler)",
         detection_confidence=0.95,
         ocr_confidence=0.98,
         gate_number=1,
@@ -70,14 +70,14 @@ def test_vehicle_model_crud(session):
     session.add(vehicle)
     session.commit()
 
-    saved_veh = Vehicle.query.filter_by(license_plate="IL-8842-TR").first()
+    saved_veh = Vehicle.query.filter_by(license_plate="MH-12-RN-8842").first()
     assert saved_veh is not None
     assert saved_veh.status == "Inside Yard"
     assert saved_veh.entry_time is not None
     assert saved_veh.created_at is not None
 
     d = saved_veh.to_dict()
-    assert d["license_plate"] == "IL-8842-TR"
+    assert d["license_plate"] == "MH-12-RN-8842"
     assert d["detection_confidence"] == 0.95
     assert d["ocr_confidence"] == 0.98
 
@@ -85,8 +85,8 @@ def test_vehicle_model_crud(session):
 def test_yard_location_relationship(session):
     """Test one-to-one relationship between Vehicle and YardLocation."""
     vehicle = Vehicle(
-        license_plate="TX-4019-BB",
-        vehicle_type="Semi-Truck",
+        license_plate="KA-01-MJ-5512",
+        vehicle_type="Ashok Leyland 4220",
         gate_number=2,
         status="Inside Yard",
     )
@@ -98,14 +98,14 @@ def test_yard_location_relationship(session):
     session.commit()
 
     # Query through vehicle relationship
-    reloaded_vehicle = Vehicle.query.filter_by(license_plate="TX-4019-BB").first()
+    reloaded_vehicle = Vehicle.query.filter_by(license_plate="KA-01-MJ-5512").first()
     assert reloaded_vehicle.yard_location is not None
     assert reloaded_vehicle.yard_location.location_code == "Bay A-14"
 
     # Query through yard location
     reloaded_loc = YardLocation.query.filter_by(location_code="Bay A-14").first()
     assert reloaded_loc.vehicle is not None
-    assert reloaded_loc.vehicle.license_plate == "TX-4019-BB"
+    assert reloaded_loc.vehicle.license_plate == "KA-01-MJ-5512"
 
 
 def test_detection_cascade_deletion(session):
@@ -140,7 +140,7 @@ def test_detection_cascade_deletion(session):
 
 def test_vehicle_checkout_lifecycle(session):
     """Test vehicle lifecycle transitioning from Inside Yard to Checked Out."""
-    vehicle = Vehicle(license_plate="OH-1932-KL", status="Inside Yard")
+    vehicle = Vehicle(license_plate="DL-01-AB-1932", status="Inside Yard")
     session.add(vehicle)
     session.commit()
 

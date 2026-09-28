@@ -31,13 +31,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (liveClock) {
         function updateClock() {
             const now = new Date();
-            const timeString = now.toLocaleTimeString("en-US", {
+            const timeString = now.toLocaleTimeString("en-IN", {
+                timeZone: "Asia/Kolkata",
                 hour12: false,
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
             });
-            liveClock.textContent = `${timeString} LOCAL`;
+            liveClock.textContent = `${timeString} IST`;
         }
         updateClock();
         setInterval(updateClock, 1000);

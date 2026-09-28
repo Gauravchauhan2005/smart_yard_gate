@@ -312,13 +312,13 @@ curl -X POST http://localhost:5000/api/gate/check-in \
     },
     "vehicle": {
       "id": 108,
-      "license_plate": "IL-8842-TR",
-      "trailer_number": "TL-88424-X",
-      "vehicle_type": "Truck",
+      "license_plate": "MH-12-RN-8842",
+      "trailer_number": "NL-01-T-8842",
+      "vehicle_type": "Tata Prima 5530.S (Heavy Hauler)",
       "gate_number": 1,
       "status": "Inside Yard",
       "yard_location": "Bay A-14",
-      "entry_time": "2026-09-28T20:30:00+00:00"
+      "entry_time": "2026-09-28T20:30:00+05:30"
     },
     "visuals": {
       "annotated_image": "static/uploads/annotated/annotated_gate_truck_a1b2c3.jpg",

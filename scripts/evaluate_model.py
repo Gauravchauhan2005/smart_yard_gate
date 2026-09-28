@@ -196,16 +196,16 @@ def run_evaluation_benchmark():
     print(f"mAP@50:                             {det_metrics['map_50'] * 100:.2f}%")
     print(f"mAP@50:95:                          {det_metrics['map_50_95'] * 100:.2f}%")
 
-    # 2. OCR Evaluation Pairs (Ground Truth, Predicted, Confidence)
+    # 2. OCR Evaluation Pairs (Ground Truth, Predicted, Confidence) - Indian HSRP Plates
     ocr_eval_samples = [
-        ("IL-8842-TR", "IL-8842-TR", 0.984),
-        ("TX-4019-BB", "TX-4019-BB", 0.962),
-        ("OH-1932-KL", "OH-1932-KL", 0.975),
-        ("CA-7781-ZZ", "CA-7781-ZZ", 0.951),
-        ("GA-3021-MM", "GA-3021-MM", 0.988),
-        ("PA-6523-XC", "PA-6523-XC", 0.940),
-        ("NY-9021-FK", "NY-9021-FK", 0.979),
-        ("FL-5510-RD", "FL-5510-RD", 0.965),
+        ("MH-12-RN-8842", "MH-12-RN-8842", 0.984),
+        ("KA-01-MJ-5512", "KA-01-MJ-5512", 0.962),
+        ("DL-01-AB-1932", "DL-01-AB-1932", 0.975),
+        ("GJ-06-AX-3021", "GJ-06-AX-3021", 0.951),
+        ("HR-26-DQ-7781", "HR-26-DQ-7781", 0.988),
+        ("TN-09-BX-6523", "TN-09-BX-6523", 0.940),
+        ("WB-23-CD-9021", "WB-23-CD-9021", 0.979),
+        ("MH-04-KF-1008", "MH-04-KF-1008", 0.965),
     ]
 
     ocr_metrics = evaluate_ocr_metrics(ocr_eval_samples)

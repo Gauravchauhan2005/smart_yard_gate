@@ -19,9 +19,9 @@ def client():
         # Seed test vehicle for detail view test
         v = Vehicle(
             id=101,
-            license_plate="IL-8842-TR",
-            trailer_number="TL-99014-X",
-            vehicle_type="Semi-Truck",
+            license_plate="MH-12-RN-8842",
+            trailer_number="NL-01-T-8842",
+            vehicle_type="Tata Prima 5530.S (Heavy Hauler)",
             gate_number=1,
             status="Inside Yard",
             detection_confidence=0.95,
@@ -94,7 +94,7 @@ def test_vehicle_detail_page_renders(client):
     response = client.get("/vehicles/101")
     assert response.status_code == 200
     assert b"Vehicle Inspection & Audit Record #101" in response.data
-    assert b"IL-8842-TR" in response.data
+    assert b"MH-12-RN-8842" in response.data
 
 
 def test_yard_inventory_page_renders(client):

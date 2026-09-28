@@ -55,9 +55,9 @@ class OCRService:
             or confidence < self.confidence_threshold
         )
 
-        # Derive companion trailer tracking number
+        # Derive companion trailer tracking number (Indian freight format)
         clean_code = plate_text.replace("-", "")[-4:] if plate_text else "0000"
-        trailer_number = f"TL-{clean_code}4-X"
+        trailer_number = f"NL-01-T-{clean_code}"
 
         return {
             "license_plate": plate_text if plate_text else "UNKNOWN-PLATE",
